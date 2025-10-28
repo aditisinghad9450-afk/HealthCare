@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Community Health Companion — Frontend</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa5b1;
+      --accent:#6ee7b7;
+      --accent-2:#60a5fa;
+      --glass: rgba(255,255,255,0.03);
+      --glass-2: rgba(255,255,255,0.02);
+      --shadow: 0 6px 20px rgba(2,6,23,0.6);
+      --radius: 12px;
+      --glass-border: rgba(255,255,255,0.04);
+      font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: linear-gradient(180deg,#071026 0%, #0f1724 100%);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:28px;
+    }
+
+    /* Layout */
+    .app {
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      gap:20px;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: var(--shadow);
+      border:1px solid var(--glass-border);
+      position:sticky;
+      top:28px;
+      height: calc(100vh - 56px);
+      overflow:auto;
+    }
+    .brand {
+      display:flex; gap:12px; align-items:center; margin-bottom:14px;
+    }
+    .logo {
+      width:44px; height:44px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:700;
+      box-shadow: 0 6px 18px rgba(96,165,250,0.12);
+    }
+    .brand h1{font-size:16px; margin:0}
+    nav a{
+      display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:10px; color:var(--muted); text-decoration:none; margin-bottom:8px; transition:all .18s;
+    }
+    nav a.active, nav a:hover{
+      background: linear-gradient(90deg, rgba(96,165,250,0.08), rgba(110,231,183,0.04));
+      color: #e6f6ff;
+      transform: translateX(4px);
+    }
+    .muted { color:var(--muted); font-size:13px; margin-top:6px }
+
+    /* Main area */
+    .main {
+      overflow:auto;
+      padding-bottom:60px;
+    }
+    .topbar {
+      display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px;
+    }
+    .search {
+      background:var(--card); padding:10px 12px; border-radius:12px; display:flex; gap:10px; align-items:center; border:1px solid var(--glass-border);
+    }
+    .search input{ background:transparent; border:0; outline:0; color: #e6eef6; width:360px }
+
+    /* Dashboard grid */
+    .grid {
+      display:grid; grid-template-columns: 1fr 420px; gap:18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:16px; border-radius:12px; box-shadow:var(--shadow); border:1px solid var(--glass-border);
+    }
+
+    .metrics { display:flex; gap:12px; }
+    .metric { flex:1; padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));}
+    .metric h3{margin:0;font-size:20px}
+    .metric p{margin:6px 0 0;color:var(--muted);font-size:13px}
+
+    /* Tabs content */
+    .section-title { font-size:18px; margin-bottom:8px }
+    .subtle { color:var(--muted); font-size:13px }
+
+    /* Queue list */
+    .queue-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; max-height:320px; overflow:auto; padding-right:6px }
+    .q-item { display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--glass); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.02) }
+    .q-left { display:flex; gap:12px; align-items:center }
+    .avatar { width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,#2dd4bf,#60a5fa); display:flex; align-items:center; justify-content:center; font-weight:700 }
+    .pill { padding:6px 8px; border-radius:999px; background:rgba(255,255,255,0.03); color:var(--muted); font-size:13px }
+
+    /* Recovery tracker */
+    .recovery-list { display:flex; flex-direction:column; gap:12px; margin-top:12px }
+    .recovery { padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.02) }
+    .progress {
+      height:10px; background:var(--glass-2); border-radius:8px; overflow:hidden; margin-top:8px;
+    }
+    .progress > i { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:8px; width:0; transition:width .8s ease }
+
+    /* Forms */
+    .form-row { display:flex; gap:8px; margin-top:8px }
+    .input, textarea, select {
+      background:transparent; border:1px solid var(--glass-border); padding:10px; border-radius:8px; color: #e6eef6; outline:0; min-width:0;
+    }
+    textarea{ min-height:80px; resize:vertical }
+
+    /* Donation list */
+    .donation-list { max-height:300px; overflow:auto; margin-top:12px; display:flex; flex-direction:column; gap:10px }
+    .don-card { padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); display:flex; justify-content:space-between; align-items:flex-start; gap:12px; border:1px solid rgba(255,255,255,0.02) }
+
+    /* Mood check */
+    .mood-grid { display:flex; gap:10px; margin-top:10px }
+    .mood-btn { flex:1; padding:12px; border-radius:10px; text-align:center; cursor:pointer; border:1px solid var(--glass-border) }
+    .mood-btn.selected { box-shadow: 0 8px 28px rgba(96,165,250,0.12); transform: translateY(-4px) }
+
+    /* Responsive */
+    @media (max-width:980px){
+      .app { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .search input { width:100px }
+      .sidebar { position:relative; height:auto }
+    }
+
+    /* Small helpers */
+    .muted-sm { color:var(--muted); font-size:12px }
+    .btn { background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#04202b; padding:8px 12px; border-radius:8px; border:0; cursor:pointer }
+    .btn-ghost { background:transparent; border:1px solid var(--glass-border); color:var(--muted) }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">CH</div>
+        <div>
+          <h1>Community Health</h1>
+          <div class="muted">Health companion UI</div>
+        </div>
+      </div>
+
+      <nav aria-label="main nav">
+        <a href="#" class="navlink active" data-page="dashboard">🏠 Dashboard</a>
+        <a href="#" class="navlink" data-page="doctor">👩‍⚕ Doctor Queue</a>
+        <a href="#" class="navlink" data-page="recovery">🩺 Recovery Tracker</a>
+        <a href="#" class="navlink" data-page="mental">🧠 Mental Check-in</a>
+        <a href="#" class="navlink" data-page="donation">💊 Medicine Portal</a>
+      </nav>
+
+      <hr style="border:0;height:1px;background:var(--glass-border);margin:14px 0">
+      <div>
+        <div class="subtle">Team Roles</div>
+        <div class="muted-sm" style="margin-top:8px">
+          <strong>Member 1:</strong> Homepage, Dashboard, styling<br>
+          <strong>Member 2:</strong> Doctor queue & recovery forms<br>
+          <strong>Member 3:</strong> Mental check + donation portal
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="subtle">Quick links</div>
+        <a href="#" class="navlink" style="margin-top:8px">📄 Reports</a>
+        <a href="#" class="navlink">⚙ Settings</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div style="display:flex; flex-direction:column">
+          <h2 style="margin:0">Dashboard</h2>
+          <div class="muted" id="subtitle">Overview & quick actions</div>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center">
+          <div class="search">
+            🔎 <input id="globalSearch" placeholder="Search patients, medicines, requests..." />
+          </div>
+          <button class="btn-ghost" title="Export sample">Export</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <!-- SUMMARY METRICS -->
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <div>
+                <div class="section-title">Summary</div>
+                <div class="subtle">Realtime snapshot of platform activity</div>
+              </div>
+              <div style="text-align:right">
+                <div class="muted-sm">Last sync: <strong id="lastSync">—</strong></div>
+                <div style="font-size:12px;margin-top:6px"><button class="btn" id="syncNow">Sync now</button></div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px" class="metrics">
+              <div class="metric">
+                <h3 id="m-patients">324</h3>
+                <p>Registered patients</p>
+              </div>
+              <div class="metric">
+                <h3 id="m-queue">7</h3>
+                <p>In doctor queue</p>
+              </div>
+              <div class="metric">
+                <h3 id="m-requests">14</h3>
+                <p>Medicines requests</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABS / PAGES (center column) -->
+          <div id="pages" style="margin-top:18px">
+            <!-- Dashboard Page -->
+            <section data-page="dashboard" class="card page">
+              <div class="section-title">Main Dashboard</div>
+              <div class="subtle">At a glance — upcoming appointments, active queues, and recent actions.</div>
+
+              <div style="display:flex; gap:12px; margin-top:12px; align-items:flex-start">
+                <div style="flex:1">
+                  <div class="card" style="padding:12px">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                      <div><strong>Upcoming Appointments</strong></div>
+                      <div class="subtle">Today</div>
+                    </div>
+                    <div class="queue-list" id="upcomingList" style="margin-top:12px">
+                      <!-- JS populated -->
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-top:12px">
+                    <div style="display:flex; justify-content:space-between">
+                      <div><strong>Recent Activity</strong></div>
+                      <div class="muted-sm">System log</div>
+                    </div>
+                    <ul id="activityLog" style="margin-top:10px; padding-left:18px; color:var(--muted)"></ul>
+                  </div>
+                </div>
+
+                <div style="width:240px">
+                  <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                      <div><strong>Live Queue</strong></div>
+                      <div class="pill" id="liveCount">0</div>
+                    </div>
+                    <div class="queue-list" id="liveQueue" style="margin-top:12px"></div>
+                    <div style="margin-top:10px; display:flex; gap:8px">
+                      <button class="btn" id="simulateAdd">Simulate patient</button>
+                      <button class="btn-ghost" id="simulateNext">Next</button>
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-top:12px">
+                    <div><strong>Quick Actions</strong></div>
+                    <div style="margin-top:8px; display:flex; gap:8px; flex-direction:column">
+                      <button class="btn" id="openDoctor">Open Doctor Queue</button>
+                      <button class="btn-ghost" id="openRecovery">Open Recovery Tracker</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Doctor Queue Page -->
+            <section data-page="doctor" class="card page" style="display:none">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div>
+                  <div class="section-title">Doctor Queue Live Tracker</div>
+                  <div class="subtle">Forms, live updates, patient-doctor connections.</div>
+                </div>
+                <div>
+                  <div class="muted-sm">Doctor on duty: <strong>Dr. Mehra</strong></div>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:12px; margin-top:12px">
+                <div style="flex:1">
+                  <div>
+                    <form id="addPatientForm">
+                      <div style="display:flex; gap:8px">
+                        <input class="input" id="pName" placeholder="Patient name" required>
+                        <input class="input" id="pIssue" placeholder="Reason (e.g., fever)" required>
+                        <button class="btn" type="submit">Add</button>
+                      </div>
+                    </form>
+                    <div class="queue-list" id="doctorQueue" style="margin-top:12px"></div>
+                  </div>
+                </div>
+
+                <div style="width:320px">
+                  <div class="card">
+                    <div><strong>Doctor View</strong></div>
+                    <div class="subtle" style="margin-top:8px">Click a patient to mark as 'seen'.</div>
+                    <div style="margin-top:10px">
+                      <label class="subtle">Now serving</label>
+                      <div id="nowServing" class="pill" style="margin-top:6px">—</div>
+                      <div style="margin-top:8px">
+                        <button class="btn-ghost" id="markSeen">Mark seen</button>
+                        <button class="btn" id="callNext">Call next</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-top:12px">
+                    <div><strong>Filter</strong></div>
+                    <div style="margin-top:8px">
+                      <select class="input" id="filterIssue">
+                        <option value="">All issues</option>
+                        <option>Fever</option>
+                        <option>Post-op followup</option>
+                        <option>Chronic care</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Recovery Tracker -->
+            <section data-page="recovery" class="card page" style="display:none">
+              <div class="section-title">Post-Surgery / Chronic Recovery Tracker</div>
+              <div class="subtle">Track patient recoveries and daily progress updates.</div>
+
+              <div style="display:flex; gap:12px; margin-top:12px">
+                <div style="flex:1">
+                  <form id="recoveryForm">
+                    <div style="display:flex; gap:8px">
+                      <input class="input" id="rName" placeholder="Patient name" required>
+                      <select class="input" id="rType">
+                        <option>Post-op followup</option>
+                        <option>Chronic care</option>
+                      </select>
+                      <button class="btn" type="submit">Add</button>
+                    </div>
+                  </form>
+
+                  <div class="recovery-list" id="recoveryList"></div>
+                </div>
+
+                <div style="width:320px">
+                  <div class="card">
+                    <div><strong>Recovery Stats</strong></div>
+                    <div style="margin-top:8px" id="recoveryStats">No patients yet</div>
+                  </div>
+
+                  <div class="card" style="margin-top:12px">
+                    <div><strong>Guidance</strong></div>
+                    <div class="muted" style="margin-top:8px; font-size:13px">
+                      Show tips if a patient reports low recovery progress for multiple days — send helpline or suggest visit.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Mental Health -->
+            <section data-page="mental" class="card page" style="display:none">
+              <div class="section-title">Mental Health Daily Check-in</div>
+              <div class="subtle">Very light-weight daily mood tracker. If negative patterns continue, the system will suggest help.</div>
+
+              <div style="margin-top:12px">
+                <div style="display:flex; gap:12px; align-items:center">
+                  <div style="flex:1">
+                    <div class="mood-grid" id="moodButtons">
+                      <div class="mood-btn" data-mood="happy">😊 Happy</div>
+                      <div class="mood-btn" data-mood="okay">🙂 Okay</div>
+                      <div class="mood-btn" data-mood="sad">😔 Sad</div>
+                      <div class="mood-btn" data-mood="anxious">😰 Anxious</div>
+                    </div>
+                    <textarea id="mNote" placeholder="Write short note (optional)" class="input" style="margin-top:10px"></textarea>
+                    <div style="display:flex; gap:8px; margin-top:8px">
+                      <button class="btn" id="saveMood">Save check-in</button>
+                      <button class="btn-ghost" id="viewMoodHistory">History</button>
+                    </div>
+                  </div>
+
+                  <div style="width:260px">
+                    <div class="card">
+                      <div><strong>Mood Insights</strong></div>
+                      <div class="muted" style="margin-top:8px" id="moodInsight">No data</div>
+                      <div style="margin-top:10px; font-size:13px" id="moodHelpline"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top:12px">
+                  <div class="card">
+                    <div><strong>Recent Check-ins</strong></div>
+                    <div id="moodHistory" style="margin-top:8px; color:var(--muted)"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Donation Page -->
+            <section data-page="donation" class="card page" style="display:none">
+              <div class="section-title">Crowdsourced Medicine Donation & Request Portal</div>
+              <div class="subtle">Add donation or request — community volunteers can claim items.</div>
+
+              <div style="display:flex; gap:12px; margin-top:12px">
+                <div style="flex:1">
+                  <form id="donForm">
+                    <div style="display:flex; gap:8px">
+                      <input class="input" id="medName" placeholder="Medicine name e.g., Paracetamol 500mg" required>
+                      <input class="input" id="medQty" placeholder="Qty" required>
+                      <button class="btn" type="submit">Add</button>
+                    </div>
+                  </form>
+
+                  <div style="margin-top:12px">
+                    <div style="display:flex; align-items:center; gap:8px; justify-content:space-between">
+                      <div><strong>Active Requests & Donations</strong></div>
+                      <div class="muted-sm">You can mark claimed items</div>
+                    </div>
+                    <div class="donation-list" id="donationList"></div>
+                  </div>
+
+                </div>
+
+                <div style="width:320px">
+                  <div class="card">
+                    <div><strong>Filter & Search</strong></div>
+                    <div style="margin-top:8px">
+                      <input class="input" id="filterMed" placeholder="Search medicine">
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-top:12px">
+                    <div><strong>How it works</strong></div>
+                    <div class="muted" style="margin-top:8px; font-size:13px">
+                      People can post donations or requests. Volunteers can claim and mark delivered. Admins verify as needed.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+        <!-- Right column summary -->
+        <aside>
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <div><strong>Quick Stats</strong></div>
+              <div class="muted-sm">Live</div>
+            </div>
+            <div style="margin-top:10px">
+              <div class="muted-sm">Open queues: <strong id="statQueues">0</strong></div>
+              <div class="muted-sm" style="margin-top:6px">Pending requests: <strong id="statRequests">0</strong></div>
+              <div class="muted-sm" style="margin-top:6px">Avg wait: <strong id="statWait">8 min</strong></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div><strong>Recent Donations</strong></div>
+            <div id="recentDon" style="margin-top:10px; color:var(--muted)"></div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div><strong>Notes</strong></div>
+            <div class="muted" style="margin-top:8px; font-size:13px">
+              This is a frontend prototype. Wire this to a backend (Firebase / Node) for production to persist data across devices.
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /* -----------------------------
+       Simple front-end logic (no frameworks)
+       Uses localStorage for persistence
+       ----------------------------- */
+
+    // Utilities
+    const $ = (sel, ctx=document) => ctx.querySelector(sel);
+    const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
+
+    // State keys
+    const LS_KEYS = {
+      queue: 'ch_queue_v1',
+      recovery: 'ch_recovery_v1',
+      mood: 'ch_mood_v1',
+      donation: 'ch_donation_v1',
+      activity: 'ch_activity_v1'
+    };
+
+    // initial sample data
+    const sampleQueue = JSON.parse(localStorage.getItem(LS_KEYS.queue) || 'null') || [
+      {id:uid(), name:'Priyansh Chaurasia', issue:'Fever', time: timeNow()},
+      {id:uid(), name:'Parv Mahawar', issue:'Chronic care', time: timeNow()},
+      {id:uid(), name:'Aditi Singh', issue:'Post-op followup', time: timeNow()}
+    ];
+
+    const sampleRecovery = JSON.parse(localStorage.getItem(LS_KEYS.recovery) || 'null') || [
+      {id:uid(), name:'Riddhi Ghosal', type:'Post-op followup', progress:40, lastUpdate: timeNow()},
+      {id:uid(), name:'Vishwjeet', type:'Chronic care', progress:70, lastUpdate: timeNow()}
+    ];
+
+    const sampleDonations = JSON.parse(localStorage.getItem(LS_KEYS.donation) || 'null') || [
+      {id:uid(), name:'Paracetamol 500mg', qty:'10', type:'donation', contact:'Volunteer: +91 90000 00001'},
+      {id:uid(), name:'Insulin (request)', qty:'2', type:'request', contact:'Requestor: +91 90000 00002'}
+    ];
+
+    const sampleActivity = JSON.parse(localStorage.getItem(LS_KEYS.activity) || 'null') || [
+      {t: timeNow(), msg: 'System started'},
+    ];
+
+    // Save initial to localStorage if not present
+    if(!localStorage.getItem(LS_KEYS.queue)) localStorage.setItem(LS_KEYS.queue, JSON.stringify(sampleQueue));
+    if(!localStorage.getItem(LS_KEYS.recovery)) localStorage.setItem(LS_KEYS.recovery, JSON.stringify(sampleRecovery));
+    if(!localStorage.getItem(LS_KEYS.donation)) localStorage.setItem(LS_KEYS.donation, JSON.stringify(sampleDonations));
+    if(!localStorage.getItem(LS_KEYS.activity)) localStorage.setItem(LS_KEYS.activity, JSON.stringify(sampleActivity));
+
+    // Helpers
+    function uid(){ return 'id'+Math.random().toString(36).slice(2,9) }
+    function timeNow(){ return new Date().toLocaleString() }
+
+    function readLS(key){ return JSON.parse(localStorage.getItem(key) || '[]') }
+    function writeLS(key, data){ localStorage.setItem(key, JSON.stringify(data)) }
+
+    /* -----------------------------
+       Page navigation
+       ----------------------------- */
+    const navlinks = $$('.navlink');
+    navlinks.forEach(a => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      navlinks.forEach(n=>n.classList.remove('active'));
+      a.classList.add('active');
+      showPage(a.dataset.page);
+    }));
+
+    function showPage(page){
+      $$('#pages .page').forEach(s => s.style.display = s.dataset.page === page ? 'block' : 'none');
+      $('#subtitle').textContent = {
+        dashboard: 'Overview & quick actions',
+        doctor: 'Doctor queue live tracker',
+        recovery: 'Recovery tracker & progress',
+        mental: 'Daily mood check-in',
+        donation: 'Medicine donation & request'
+      }[page] || 'Overview';
+      document.querySelectorAll('.navlink').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+    }
+
+    /* -----------------------------
+       Activity log helper
+       ----------------------------- */
+    function pushActivity(msg){
+      const a = readLS(LS_KEYS.activity);
+      a.unshift({t: timeNow(), msg});
+      if(a.length>50) a.pop();
+      writeLS(LS_KEYS.activity, a);
+      renderActivity();
+    }
+    function renderActivity(){
+      const a = readLS(LS_KEYS.activity);
+      const ul = $('#activityLog');
+      ul.innerHTML = '';
+      a.slice(0,6).forEach(it=>{
+        const li = document.createElement('li');
+        li.textContent = `${it.t} — ${it.msg}`;
+        ul.appendChild(li);
+      })
+    }
+
+    /* -----------------------------
+       Doctor Queue
+       ----------------------------- */
+    function renderDoctorQueue(){
+      const q = readLS(LS_KEYS.queue);
+      const container = $('#doctorQueue');
+      container.innerHTML = '';
+      q.forEach(p=>{
+        const el = document.createElement('div');
+        el.className = 'q-item';
+        el.innerHTML = `
+          <div class="q-left">
+            <div class="avatar">${p.name.split(' ').map(s=>s[0]).slice(0,2).join('')}</div>
+            <div>
+              <div style="font-weight:600">${p.name}</div>
+              <div class="muted-sm">${p.issue} · <span class="muted">${p.time}</span></div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
+            <div class="pill">${p.id.slice(-4)}</div>
+            <div>
+              <button class="btn-ghost" data-action="call" data-id="${p.id}">Call</button>
+              <button class="btn" data-action="remove" data-id="${p.id}">Seen</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+
+      // attach handlers
+      container.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click', (e)=>{
+          const id = b.dataset.id;
+          const action = b.dataset.action;
+          if(action === 'call'){
+            const patient = q.find(x=>x.id===id);
+            if(patient){
+              $('#nowServing').textContent = patient.name;
+              pushActivity(`Calling patient ${patient.name}`);
+            }
+          } else {
+            // remove
+            const patient = q.find(x=>x.id===id);
+            const newq = q.filter(x=>x.id!==id);
+            writeLS(LS_KEYS.queue, newq);
+            renderDoctorQueue();
+            renderLiveQueue();
+            $('#m-queue').textContent = newq.length;
+            pushActivity(`Marked seen: ${patient ? patient.name : id}`);
+          }
+        });
+      });
+    }
+
+    $('#addPatientForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const name = $('#pName').value.trim();
+      const issue = $('#pIssue').value.trim();
+      if(!name || !issue) return;
+      const q = readLS(LS_KEYS.queue);
+      q.push({id:uid(), name, issue, time: timeNow()});
+      writeLS(LS_KEYS.queue, q);
+      $('#pName').value=''; $('#pIssue').value='';
+      renderDoctorQueue();
+      renderLiveQueue();
+      $('#m-queue').textContent = q.length;
+      pushActivity(`New patient added: ${name} (${issue})`);
+    });
+
+    // global actions
+    $('#callNext')?.addEventListener('click', ()=>{
+      const q = readLS(LS_KEYS.queue);
+      if(q.length===0) { alert('Queue empty'); return; }
+      const next = q[0];
+      $('#nowServing').textContent = next.name;
+      pushActivity(`Now serving: ${next.name}`);
+    });
+
+    $('#markSeen')?.addEventListener('click', ()=>{
+      const now = $('#nowServing').textContent;
+      if(now==='—') return alert('No one is being served');
+      let q = readLS(LS_KEYS.queue);
+      q = q.filter(x=>x.name !== now);
+      writeLS(LS_KEYS.queue, q);
+      $('#nowServing').textContent = '—';
+      renderDoctorQueue(); renderLiveQueue();
+      $('#m-queue').textContent = q.length;
+      pushActivity(`Marked seen (doctor): ${now}`);
+    });
+
+    /* -----------------------------
+       Live queue in Dashboard (simulated)
+       ----------------------------- */
+    function renderLiveQueue(){
+      const q = readLS(LS_KEYS.queue);
+      $('#liveQueue').innerHTML = '';
+      q.slice(0,8).forEach((p, idx)=>{
+        const el = document.createElement('div');
+        el.className = 'q-item';
+        el.innerHTML = `<div class="q-left"><div class="avatar">${p.name.split(' ').map(s=>s[0]).slice(0,2).join('')}</div>
+          <div><div style="font-weight:600">${p.name}</div><div class="muted-sm">${p.issue}</div></div></div>
+          <div class="pill">${idx+1}</div>`;
+        $('#liveQueue').appendChild(el);
+      });
+      $('#liveCount').textContent = q.length;
+      $('#statQueues').textContent = q.length;
+    }
+
+    $('#simulateAdd').addEventListener('click', ()=>{
+      const names = ['Priyansh Chaurasia','Parv Mahawar','Aditi Singh','Riddhi Ghosal','Vishwjeet','Priya','Karan'];
+      const issues = ['Fever','Chronic care','Checkup','Cough','Post-op followup'];
+      const p = { id: uid(), name: names[Math.floor(Math.random()*names.length)]+' '+Math.floor(Math.random()*90), issue: issues[Math.floor(Math.random()*issues.length)], time: timeNow() };
+      const q = readLS(LS_KEYS.queue);
+      q.push(p);
+      writeLS(LS_KEYS.queue, q);
+      renderLiveQueue();
+      renderDoctorQueue();
+      $('#m-queue').textContent = q.length;
+      pushActivity(`Simulated patient added: ${p.name}`);
+    });
+
+    $('#simulateNext').addEventListener('click', ()=>{
+      let q = readLS(LS_KEYS.queue);
+      if(q.length===0) return alert('Queue empty');
+      const next = q.shift();
+      writeLS(LS_KEYS.queue, q);
+      renderLiveQueue();
+      renderDoctorQueue();
+      $('#m-queue').textContent = q.length;
+      pushActivity(`Simulated next: ${next.name}`);
+    });
+
+    /* -----------------------------
+       Recovery tracker
+       ----------------------------- */
+    function renderRecovery(){
+      const list = readLS(LS_KEYS.recovery);
+      const container = $('#recoveryList');
+      container.innerHTML = '';
+      list.forEach(r=>{
+        const el = document.createElement('div');
+        el.className = 'recovery';
+        el.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <div><strong>${r.name}</strong> <div class="muted-sm">${r.type}</div></div>
+            <div style="text-align:right"><div class="pill">${r.progress}%</div><div class="muted-sm">${r.lastUpdate}</div></div>
+          </div>
+          <div class="progress"><i style="width:${r.progress}%"></i></div>
+          <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end">
+            <button class="btn-ghost" data-action="update" data-id="${r.id}">Update</button>
+            <button class="btn" data-action="remove" data-id="${r.id}">Remove</button>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+
+      // attach handlers
+      container.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const id = b.dataset.id;
+          if(b.dataset.action === 'update'){
+            const newVal = prompt('Enter new progress percent (0-100)');
+            if(!newVal) return;
+            const list = readLS(LS_KEYS.recovery);
+            const idx = list.findIndex(x=>x.id===id);
+            if(idx>-1){
+              list[idx].progress = Math.max(0,Math.min(100,parseInt(newVal)));
+              list[idx].lastUpdate = timeNow();
+              writeLS(LS_KEYS.recovery, list);
+              renderRecovery();
+              pushActivity(`Recovery updated: ${list[idx].name} -> ${list[idx].progress}%`);
+            }
+          } else {
+            let list = readLS(LS_KEYS.recovery);
+            list = list.filter(x=>x.id!==id);
+            writeLS(LS_KEYS.recovery, list);
+            renderRecovery();
+            pushActivity('Recovery entry removed');
+          }
+        });
+      });
+
+      // stats
+      const stats = readLS(LS_KEYS.recovery);
+      const avg = stats.length ? Math.round(stats.reduce((s,i)=>s+i.progress,0)/stats.length) : 0;
+      $('#recoveryStats').textContent = `${stats.length} patients tracked • Avg progress: ${avg}%`;
+    }
+
+    $('#recoveryForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const name = $('#rName').value.trim();
+      const type = $('#rType').value;
+      if(!name) return;
+      const list = readLS(LS_KEYS.recovery);
+      list.push({id:uid(), name, type, progress: 10 + Math.floor(Math.random()*50), lastUpdate: timeNow()});
+      writeLS(LS_KEYS.recovery, list);
+      $('#rName').value='';
+      renderRecovery();
+      pushActivity(`Recovery added: ${name}`);
+    });
+
+    /* -----------------------------
+       Mood (mental health)
+       ----------------------------- */
+    let selectedMood = null;
+    $('#moodButtons').querySelectorAll('.mood-btn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        $('#moodButtons').querySelectorAll('.mood-btn').forEach(x=>x.classList.remove('selected'));
+        b.classList.add('selected');
+        selectedMood = b.dataset.mood;
+      });
+    });
+
+    $('#saveMood').addEventListener('click', ()=>{
+      if(!selectedMood) return alert('Choose a mood first');
+      const note = $('#mNote').value.trim();
+      const list = JSON.parse(localStorage.getItem(LS_KEYS.mood) || '[]');
+      list.unshift({id:uid(), mood:selectedMood, note, t: timeNow()});
+      if(list.length>60) list.pop();
+      localStorage.setItem(LS_KEYS.mood, JSON.stringify(list));
+      $('#mNote').value=''; $('#moodButtons').querySelectorAll('.mood-btn').forEach(x=>x.classList.remove('selected'));
+      selectedMood = null;
+      renderMood();
+      pushActivity('Mood check-in saved');
+    });
+
+    function renderMood(){
+      const list = JSON.parse(localStorage.getItem(LS_KEYS.mood) || '[]');
+      $('#moodHistory').innerHTML = list.slice(0,6).map(it => `<div style="padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.02)">${it.t} • <strong>${it.mood}</strong><div class="muted-sm">${it.note || ''}</div></div>`).join('') || '<div class="muted">No check-ins yet</div>';
+      // insight simple
+      const counts = list.reduce((acc, it)=> (acc[it.mood] = (acc[it.mood]||0)+1, acc), {});
+      const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+      $('#moodInsight').textContent = entries.length ? `Most frequent: ${entries[0][0]} (${entries[0][1]} check-ins)` : 'No data';
+      // helpline: if last 3 are sad/anxious => show helpline
+      const last3 = list.slice(0,3).map(x=>x.mood);
+      if(last3.length===3 && last3.every(m=> m==='sad' || m==='anxious')){
+        $('#moodHelpline').innerHTML = '<strong style="color:#ffd1d1">⚠ Suggest contacting help: </strong> Helpline: 98765 43210';
+      } else {
+        $('#moodHelpline').innerHTML = '';
+      }
+    }
+
+    /* -----------------------------
+       Donation portal
+       ----------------------------- */
+    function renderDonations(filter=''){
+      const list = readLS(LS_KEYS.donation).slice().reverse();
+      const container = $('#donationList');
+      container.innerHTML = '';
+      const filtered = list.filter(d => d.name.toLowerCase().includes(filter.toLowerCase()));
+      filtered.forEach(d=>{
+        const el = document.createElement('div');
+        el.className = 'don-card';
+        el.innerHTML = `<div style="flex:1">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <div><strong>${d.name}</strong><div class="muted-sm">${d.contact || ''}</div></div>
+            <div class="pill">${d.type}</div>
+          </div>
+          <div class="muted-sm" style="margin-top:8px">Qty: ${d.qty}</div>
+        </div>
+        <div style="display:flex;flex-direction:column; gap:8px; align-items:flex-end">
+          <button class="btn" data-claim="${d.id}">Claim</button>
+          <button class="btn-ghost" data-remove="${d.id}">Remove</button>
+        </div>`;
+        container.appendChild(el);
+      });
+
+      // attach handlers
+      container.querySelectorAll('[data-claim]').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const id = b.dataset.claim;
+          const list = readLS(LS_KEYS.donation);
+          const idx = list.findIndex(x=>x.id===id);
+          if(idx>-1){
+            list[idx].contact = prompt('Enter volunteer contact (phone/email):', list[idx].contact || '');
+            list[idx].type = 'claimed';
+            writeLS(LS_KEYS.donation, list);
+            renderDonations($('#filterMed').value);
+            pushActivity(`Donation claimed: ${list[idx].name}`);
+          }
+        });
+      });
+      container.querySelectorAll('[data-remove]').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const id = b.dataset.remove;
+          let list = readLS(LS_KEYS.donation);
+          list = list.filter(x=>x.id!==id);
+          writeLS(LS_KEYS.donation, list);
+          renderDonations($('#filterMed').value);
+          pushActivity('Donation/request removed');
+        });
+      });
+
+      $('#statRequests').textContent = filtered.length;
+      $('#recentDon').innerHTML = list.slice(0,3).map(i => `${i.name} (${i.type})`).join('<br>') || '—';
+    }
+
+    $('#donForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const name = $('#medName').value.trim();
+      const qty = $('#medQty').value.trim();
+      if(!name || !qty) return;
+      const list = readLS(LS_KEYS.donation);
+      list.push({id:uid(), name, qty, type: name.toLowerCase().includes('request') ? 'request' : 'donation', contact:''});
+      writeLS(LS_KEYS.donation, list);
+      $('#medName').value=''; $('#medQty').value='';
+      renderDonations();
+      pushActivity(`Donation/request posted: ${name}`);
+    });
+
+    $('#filterMed').addEventListener('input', (e)=>{
+      renderDonations(e.target.value);
+    });
+
+    /* -----------------------------
+       Search
+       ----------------------------- */
+    $('#globalSearch').addEventListener('input', (e)=>{
+      const q = e.target.value.toLowerCase();
+      // quick filter demo: if search contains 'doctor' open doctor page
+      if(q.includes('doctor') || q.includes('queue')) showPage('doctor');
+      if(q.includes('mood') || q.includes('mental')) showPage('mental');
+      // otherwise highlight items (simple)
+    });
+
+    /* -----------------------------
+       Startup render
+       ----------------------------- */
+    function startup(){
+      $('#lastSync').textContent = timeNow();
+      renderActivity();
+      renderDoctorQueue();
+      renderLiveQueue();
+      renderRecovery();
+      renderDonations();
+      renderMood();
+      $('#m-patients').textContent = 324;
+      $('#m-queue').textContent = readLS(LS_KEYS.queue).length;
+      $('#m-requests').textContent = readLS(LS_KEYS.donation).length;
+    }
+
+    // quick nav buttons
+    $('#openDoctor').addEventListener('click', ()=>{ showPage('doctor') });
+    $('#openRecovery').addEventListener('click', ()=>{ showPage('recovery') });
+
+    $('#syncNow').addEventListener('click', ()=>{
+      $('#lastSync').textContent = timeNow();
+      pushActivity('Manual sync requested');
+    });
+
+    // small helpers to add some initial upcoming appointments
+    function populateUpcoming(){
+      const ul = $('#upcomingList');
+      const items = [
+        {name:'Sahil', time:'10:30 AM', note:'Vaccination'},
+        {name:'Devika', time:'11:00 AM', note:'Stitch removal'},
+        {name:'Mr. Roy', time:'12:15 PM', note:'Review'},
+      ];
+      ul.innerHTML = '';
+      items.forEach(it=>{
+        const el = document.createElement('div');
+        el.className='q-item';
+        el.innerHTML = `<div><strong>${it.name}</strong><div class="muted-sm">${it.note} · ${it.time}</div></div><div class="pill">APPT</div>`;
+        ul.appendChild(el);
+      });
+    }
+    populateUpcoming();
+    startup();
+
+    // show default page dashboard
+    showPage('dashboard');
+  </script>
+</body>
+</html>
